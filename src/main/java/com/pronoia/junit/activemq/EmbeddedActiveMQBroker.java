@@ -16,8 +16,6 @@
  */
 package com.pronoia.junit.activemq;
 
-import static org.apache.activemq.command.ActiveMQDestination.QUEUE_TYPE;
-
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -448,16 +446,47 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
       throw new IllegalStateException("BrokerService has not yet been created - was before() called?");
     }
 
-    Destination destination = null;
+    Destination answer;
+
     try {
-      destination = brokerService.getDestination(ActiveMQDestination.createDestination(destinationName, QUEUE_TYPE));
+      ActiveMQDestination tmpDestination;
+
+      if (destinationName.startsWith("queue://")) {
+        tmpDestination = new ActiveMQQueue(destinationName.substring("queue://".length()));
+      } else if (destinationName.startsWith("queue:/")) {
+        tmpDestination = new ActiveMQQueue(destinationName.substring("queue:/".length()));
+      } else if (destinationName.startsWith("queue:")) {
+        tmpDestination = new ActiveMQQueue(destinationName.substring("queue:".length()));
+      } else if (destinationName.startsWith("topic://")) {
+        tmpDestination = new ActiveMQTopic(destinationName.substring("topic://".length()));
+      } else if (destinationName.startsWith("topic:/")) {
+        tmpDestination = new ActiveMQTopic(destinationName.substring("topic:/".length()));
+      } else if (destinationName.startsWith("topic:")) {
+        tmpDestination = new ActiveMQTopic(destinationName.substring("topic:".length()));
+      } else if (destinationName.startsWith("temp-queue://")) {
+        tmpDestination = new ActiveMQTempQueue(destinationName.substring("temp-queue://".length()));
+      } else if (destinationName.startsWith("temp-queue:/")) {
+        tmpDestination = new ActiveMQTempQueue(destinationName.substring("temp-queue:/".length()));
+      } else if (destinationName.startsWith("temp-queue:")) {
+        tmpDestination = new ActiveMQTempQueue(destinationName.substring("temp-queue:".length()));
+      } else if (destinationName.startsWith("temp-topic://")) {
+        tmpDestination = new ActiveMQTempTopic(destinationName.substring("temp-topic://".length()));
+      } else if (destinationName.startsWith("temp-topic:/")) {
+        tmpDestination = new ActiveMQTempTopic(destinationName.substring("temp-topic:/".length()));
+      } else if (destinationName.startsWith("temp-topic:")) {
+        tmpDestination = new ActiveMQTempTopic(destinationName.substring("temp-topic:".length()));
+      } else {
+        tmpDestination = new ActiveMQQueue(destinationName);
+      }
+
+      answer = brokerService.getDestination(tmpDestination);
     } catch (RuntimeException runtimeEx) {
       throw runtimeEx;
     } catch (Exception ex) {
       throw new EmbeddedActiveMQBrokerException("Unexpected exception getting destination from broker", ex);
     }
 
-    return destination;
+    return answer;
   }
 
   private PolicyEntry getDefaultPolicyEntry() {
@@ -686,16 +715,6 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     return (StreamMessage) peekMessage(destinationName);
   }
 
-  public static class EmbeddedActiveMQBrokerException extends RuntimeException {
-    public EmbeddedActiveMQBrokerException(String message) {
-      super(message);
-    }
-
-    public EmbeddedActiveMQBrokerException(String message, Exception cause) {
-      super(message, cause);
-    }
-  }
-
   ActiveMQDestination createDestination(String destinationName) {
     if (destinationName.startsWith("queue://")) {
       return new ActiveMQQueue(destinationName.substring("queue://".length()));
@@ -718,6 +737,17 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     }
 
   }
+
+  public static class EmbeddedActiveMQBrokerException extends RuntimeException {
+    public EmbeddedActiveMQBrokerException(String message) {
+      super(message);
+    }
+
+    public EmbeddedActiveMQBrokerException(String message, Exception cause) {
+      super(message, cause);
+    }
+  }
+
   private class InternalClient {
     ActiveMQConnectionFactory connectionFactory;
     Connection connection;
