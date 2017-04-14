@@ -70,7 +70,7 @@ public class VmConnectionFactoryUtils {
           urlBuilder.append(",");
         }
       }
-      urlBuilder.append(')');
+      urlBuilder.append(")?randomize=false");
 
       connectionFactory.setBrokerURL(urlBuilder.toString());
     }
