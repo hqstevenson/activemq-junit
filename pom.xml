@@ -6,14 +6,14 @@
 
     <groupId>com.pronoia.junit</groupId>
     <artifactId>activemq-junit</artifactId>
-    <version>0.1.1</version>
+    <version>1.0.0-SNAPSHOT</version>
 
     <name>ActiveMQ JUnit Utilities</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <activemq-version>5.14.2</activemq-version>
+        <activemq-version>5.14.4</activemq-version>
         <spring-version>4.1.9.RELEASE</spring-version>
         <junit-version>4.12</junit-version>
         <slf4j-version>1.7.21</slf4j-version>
@@ -65,7 +65,7 @@
 
         <!-- ensure that the versions of spring-context and activemq-spring are compatible
             ActiveMQ      =>  Spring
-              5.14.[0-3]  =>    4.1.9.RELEASE
+              5.14.[0-4]  =>    4.1.9.RELEASE
               5.13.[1-5]  =>    4.1.9.RELEASE
               5.13.0      =>    4.1.8.RELEASE
               5.12.3      =>    3.2.16.RELEASE
@@ -140,4 +140,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

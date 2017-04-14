@@ -43,7 +43,6 @@ import org.apache.activemq.command.ActiveMQTempQueue;
 import org.apache.activemq.command.ActiveMQTempTopic;
 import org.apache.activemq.command.ActiveMQTopic;
 import org.apache.activemq.plugin.StatisticsBrokerPlugin;
-import org.apache.activemq.pool.PooledConnectionFactory;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,6 +94,114 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     }
   }
 
+  /**
+   * Customize the configuration of the embedded ActiveMQ broker
+   * <p>
+   * This method is called before the embedded ActiveMQ broker is started, and can
+   * be overridden to this method to customize the broker configuration.
+   */
+  protected void configure() {
+  }
+
+
+  /**
+   * Start the embedded ActiveMQ Broker
+   * <p/>
+   * Invoked by JUnit to setup the resource
+   */
+  @Override
+  protected void before() throws Throwable {
+    log.info("Starting embedded ActiveMQ broker: {}", this.getBrokerName());
+
+    this.start();
+
+    super.before();
+  }
+
+  /**
+   * Stop the embedded ActiveMQ Broker
+   * <p/>
+   * Invoked by JUnit to tear down the resource
+   */
+  @Override
+  protected void after() {
+    log.info("Stopping Embedded ActiveMQ Broker: {}", this.getBrokerName());
+
+    super.after();
+
+    this.stop();
+  }
+
+  public void setMessageHeaders(Message message, Map<String, Object> headers) {
+    if (headers != null && headers.size() > 0) {
+      for (Map.Entry<String, Object> header : headers.entrySet()) {
+        try {
+          Object value = header.getValue();
+          switch (header.getKey()) {
+            case "JMSDestination":
+              message.setJMSMessageID(value.toString());
+              break;
+            case "JMSDeliveryMode":
+              if (value instanceof Integer) {
+                message.setJMSDeliveryMode((Integer) value);
+              } else if (value instanceof Long) {
+                message.setJMSDeliveryMode(((Long) value).intValue());
+              } else {
+                message.setJMSDeliveryMode(Integer.parseInt(value.toString()));
+              }
+              break;
+            case "JMSExpiration":
+              if (value instanceof Integer) {
+                message.setJMSExpiration((Integer) value);
+              } else if (value instanceof Long) {
+                message.setJMSExpiration((Long) value);
+              } else {
+                message.setJMSExpiration(Long.parseLong(value.toString()));
+              }
+              break;
+            case "JMSPriority":
+              if (value instanceof Integer) {
+                message.setJMSPriority((Integer) value);
+              } else if (value instanceof Long) {
+                message.setJMSPriority(((Long) value).intValue());
+              } else {
+                message.setJMSPriority(Integer.parseInt(value.toString()));
+              }
+              break;
+            case "JMSMessageID":
+              message.setJMSMessageID(value.toString());
+              break;
+            case "JMSTimestamp":
+              if (value instanceof Integer) {
+                message.setJMSTimestamp((Integer) value);
+              } else if (value instanceof Long) {
+                message.setJMSTimestamp((Long) value);
+              } else {
+                message.setJMSTimestamp(Long.parseLong(value.toString()));
+              }
+              break;
+            case "JMSCorrelationID":
+              message.setJMSCorrelationID(value.toString());
+              break;
+            case "JMSReplyTo":
+              message.setJMSReplyTo(createDestination(value.toString()));
+              break;
+            case "JMSType":
+              message.setJMSType(value.toString());
+              break;
+            default:
+              log.warn("Ignoring value <{}> of type {} for unknown/unsupported header <{}>",
+                  header.getValue(), header.getValue().getClass().getName(), header.getKey());
+          }
+        } catch (JMSException jmsEx) {
+          log.warn(
+              String.format("Ignoring unexpected exception encountered when attempting to set header <%s> of type <%s> to value %s.",
+                  header.getKey(), header.getValue().getClass().getName(), header.getValue()), jmsEx);
+        }
+      }
+    }
+  }
+
   public static void setMessageProperties(Message message, Map<String, Object> properties) {
     if (properties != null && properties.size() > 0) {
       for (Map.Entry<String, Object> property : properties.entrySet()) {
@@ -108,12 +215,42 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
   }
 
   /**
-   * Customize the configuration of the embedded ActiveMQ broker
-   * <p>
-   * This method is called before the embedded ActiveMQ broker is started, and can
-   * be overridden to this method to customize the broker configuration.
+   * Create an {@link org.apache.activemq.command.ActiveMQDestination} for the given destination name.
+   *
+   * @param destinationName
    */
-  protected void configure() {
+  static ActiveMQDestination createDestination(String destinationName) {
+    ActiveMQDestination tmpDestination;
+
+    if (destinationName.startsWith("queue://")) {
+      tmpDestination = new ActiveMQQueue(destinationName.substring("queue://".length()));
+    } else if (destinationName.startsWith("queue:/")) {
+      tmpDestination = new ActiveMQQueue(destinationName.substring("queue:/".length()));
+    } else if (destinationName.startsWith("queue:")) {
+      tmpDestination = new ActiveMQQueue(destinationName.substring("queue:".length()));
+    } else if (destinationName.startsWith("topic://")) {
+      tmpDestination = new ActiveMQTopic(destinationName.substring("topic://".length()));
+    } else if (destinationName.startsWith("topic:/")) {
+      tmpDestination = new ActiveMQTopic(destinationName.substring("topic:/".length()));
+    } else if (destinationName.startsWith("topic:")) {
+      tmpDestination = new ActiveMQTopic(destinationName.substring("topic:".length()));
+    } else if (destinationName.startsWith("temp-queue://")) {
+      tmpDestination = new ActiveMQTempQueue(destinationName.substring("temp-queue://".length()));
+    } else if (destinationName.startsWith("temp-queue:/")) {
+      tmpDestination = new ActiveMQTempQueue(destinationName.substring("temp-queue:/".length()));
+    } else if (destinationName.startsWith("temp-queue:")) {
+      tmpDestination = new ActiveMQTempQueue(destinationName.substring("temp-queue:".length()));
+    } else if (destinationName.startsWith("temp-topic://")) {
+      tmpDestination = new ActiveMQTempTopic(destinationName.substring("temp-topic://".length()));
+    } else if (destinationName.startsWith("temp-topic:/")) {
+      tmpDestination = new ActiveMQTempTopic(destinationName.substring("temp-topic:/".length()));
+    } else if (destinationName.startsWith("temp-topic:")) {
+      tmpDestination = new ActiveMQTempTopic(destinationName.substring("temp-topic:".length()));
+    } else {
+      tmpDestination = new ActiveMQQueue(destinationName);
+    }
+
+    return tmpDestination;
   }
 
   /**
@@ -158,55 +295,31 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
   }
 
   /**
-   * Start the embedded ActiveMQ Broker
-   * <p/>
-   * Invoked by JUnit to setup the resource
-   */
-  @Override
-  protected void before() throws Throwable {
-    log.info("Starting embedded ActiveMQ broker: {}", this.getBrokerName());
-
-    this.start();
-
-    super.before();
-  }
-
-  /**
-   * Stop the embedded ActiveMQ Broker
-   * <p/>
-   * Invoked by JUnit to tear down the resource
-   */
-  @Override
-  protected void after() {
-    log.info("Stopping Embedded ActiveMQ Broker: {}", this.getBrokerName());
-
-    super.after();
-
-    this.stop();
-  }
-
-  /**
-   * Create an ActiveMQConnectionFactory for the embedded ActiveMQ Broker
+   * Get the name of the embedded ActiveMQ Broker
    *
-   * @return a new ActiveMQConnectionFactory
+   * @return name of the embedded broker
    */
-  public ActiveMQConnectionFactory createConnectionFactory() {
-    ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
-    connectionFactory.setBrokerURL(getVmURL());
-    return connectionFactory;
+  public String getBrokerName() {
+    return brokerService.getBrokerName();
   }
 
   /**
-   * Create an PooledConnectionFactory for the embedded ActiveMQ Broker
+   * Set the name of the embedded ActiveMQ Broker
    *
-   * @return a new PooledConnectionFactory
+   * @param brokerName
    */
-  public PooledConnectionFactory createPooledConnectionFactory() {
-    ActiveMQConnectionFactory connectionFactory = createConnectionFactory();
+  public void setBrokerName(String brokerName) {
+    brokerService.setBrokerName(brokerName);
+  }
 
-    PooledConnectionFactory pooledConnectionFactory = new PooledConnectionFactory(connectionFactory);
-
-    return pooledConnectionFactory;
+  /**
+   * Builder-style setter for the name of the embedded ActiveMQ Broker
+   *
+   * @param brokerName
+   */
+  public EmbeddedActiveMQBroker brokerName(String brokerName) {
+    brokerService.setBrokerName(brokerName);
+    return this;
   }
 
   /**
@@ -239,6 +352,7 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
    * and the resulting duplicate broker errors
    *
    * @param failoverURL if true a failover URL will be returned
+   *
    * @return the VM URL for the embedded broker
    */
   public String getVmURL(boolean failoverURL) {
@@ -268,6 +382,7 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
    * and the resulting duplicate broker errors
    *
    * @param failoverURI if true a failover URI will be returned
+   *
    * @return the VM URI for the embedded broker
    */
   public URI getVmURI(boolean failoverURI) {
@@ -282,18 +397,12 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
   }
 
   /**
-   * Get the name of the embedded ActiveMQ Broker
+   * Get the state of the ActiveMQ Statistics Plugin.
+   * <p>
+   * See <a href="http://activemq.apache.org/statisticsplugin.html" />
    *
-   * @return name of the embedded broker
+   * @return true if the plugin is enabled; false otherwise
    */
-  public String getBrokerName() {
-    return brokerService.getBrokerName();
-  }
-
-  public void setBrokerName(String brokerName) {
-    brokerService.setBrokerName(brokerName);
-  }
-
   public boolean isStatisticsPluginEnabled() {
     BrokerPlugin[] plugins = brokerService.getPlugins();
 
@@ -308,6 +417,9 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     return false;
   }
 
+  /**
+   * Enable the ActiveMQ Statistics Plugin.
+   */
   public void enableStatisticsPlugin() {
     if (!isStatisticsPluginEnabled()) {
       BrokerPlugin[] newPlugins;
@@ -326,6 +438,9 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     }
   }
 
+  /**
+   * Disable the ActiveMQ Statistics Plugin.
+   */
   public void disableStatisticsPlugin() {
     if (isStatisticsPluginEnabled()) {
       BrokerPlugin[] currentPlugins = brokerService.getPlugins();
@@ -346,64 +461,236 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     }
   }
 
+  /**
+   * Get the state of the ActiveMQ advisoryForDelivery Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   *
+   * @return
+   */
   public boolean isAdvisoryForDeliveryEnabled() {
     return getDefaultPolicyEntry().isAdvisoryForDelivery();
   }
 
+  /**
+   * Enable the ActiveMQ advisoryForDelivery Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
   public void enableAdvisoryForDelivery() {
     getDefaultPolicyEntry().setAdvisoryForDelivery(true);
   }
 
+  /**
+   * Disable the ActiveMQ advisoryForDelivery Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
   public void disableAdvisoryForDelivery() {
     getDefaultPolicyEntry().setAdvisoryForDelivery(false);
   }
 
+  /**
+   * Get the state of the ActiveMQ advisoryForDelivery Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   *
+   * @return
+   */
   public boolean isAdvisoryForConsumedEnabled() {
     return getDefaultPolicyEntry().isAdvisoryForConsumed();
   }
 
+  /**
+   * Enable the ActiveMQ advisoryForDelivery Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
   public void enableAdvisoryForConsumed() {
     getDefaultPolicyEntry().setAdvisoryForConsumed(true);
   }
 
+  /**
+   * Disable the ActiveMQ advisoryForDelivery Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
   public void disableAdvisoryForConsumed() {
     getDefaultPolicyEntry().setAdvisoryForConsumed(false);
   }
 
+  /**
+   * Get the state of the ActiveMQ sendAdvisoryIfNoConsumers Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   *
+   * @return
+   */
+  public boolean isAdvisoryForNoConsumers() {
+    return getDefaultPolicyEntry().isSendAdvisoryIfNoConsumers();
+  }
+
+  /**
+   * Enable the ActiveMQ sendAdvisoryIfNoConsumers Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
+  public void enableAdvisoryNoConsumers() {
+    getDefaultPolicyEntry().setSendAdvisoryIfNoConsumers(true);
+  }
+
+  /**
+   * Disable the ActiveMQ sendAdvisoryIfNoConsumers Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
+  public void disableAdvisoryNoConsumers() {
+    getDefaultPolicyEntry().setSendAdvisoryIfNoConsumers(false);
+  }
+
+  /**
+   * Get the state of the ActiveMQ sendAdvisoryIfNoConsumers Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   *
+   * @return
+   */
   public boolean isAdvisoryForDiscardingMessagesEnabled() {
     return getDefaultPolicyEntry().isAdvisoryForDiscardingMessages();
   }
 
+  /**
+   * Enable the ActiveMQ advisoryForDiscardingMessages Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
   public void enableAdvisoryForDiscardingMessages() {
     getDefaultPolicyEntry().setAdvisoryForDiscardingMessages(true);
   }
 
+  /**
+   * Disable the ActiveMQ advisoryForDiscardingMessages Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
   public void disableAdvisoryForDiscardingMessages() {
     getDefaultPolicyEntry().setAdvisoryForDiscardingMessages(false);
   }
 
+  /**
+   * Get the state of the ActiveMQ advisoryForFastProducers Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   *
+   * @return
+   */
   public boolean isAdvisoryForFastProducersEnabled() {
     return getDefaultPolicyEntry().isAdvisoryForFastProducers();
   }
 
+  /**
+   * Enable the ActiveMQ advisoryForFastProducers Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
   public void enableAdvisoryForFastProducers() {
     getDefaultPolicyEntry().setAdvisoryForFastProducers(true);
   }
 
+  /**
+   * Disable the ActiveMQ advisoryForFastProducers Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
   public void disableAdvisoryForFastProducers() {
     getDefaultPolicyEntry().setAdvisoryForFastProducers(false);
   }
 
+  /**
+   * Get the state of the ActiveMQ advisoryForSlowConsumers Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   *
+   * @return
+   */
   public boolean isAdvisoryForSlowConsumersEnabled() {
     return getDefaultPolicyEntry().isAdvisoryForSlowConsumers();
   }
 
+  /**
+   * Enable the ActiveMQ advisoryForSlowConsumers Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
   public void enableAdvisoryForSlowConsumers() {
     getDefaultPolicyEntry().setAdvisoryForSlowConsumers(true);
   }
 
+  /**
+   * Disable the ActiveMQ advisoryForSlowConsumers Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
   public void disableAdvisoryForSlowConsumers() {
     getDefaultPolicyEntry().setAdvisoryForSlowConsumers(false);
+  }
+
+  /**
+   * Get the state of the ActiveMQ includeBodyForAdvisory Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   *
+   * @return
+   */
+  public boolean isBodyForAdvisoryIncluded() {
+    return getDefaultPolicyEntry().isIncludeBodyForAdvisory();
+  }
+
+  /**
+   * Enable the ActiveMQ includeBodyForAdvisory Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
+  public void enableIncludeBodyForAdvisory() {
+    getDefaultPolicyEntry().setIncludeBodyForAdvisory(true);
+  }
+
+  /**
+   * Disable the ActiveMQ includeBodyForAdvisory Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
+  public void disableIncludeBodyForAdvisory() {
+    getDefaultPolicyEntry().setIncludeBodyForAdvisory(false);
+  }
+
+  /**
+   * Get the state of the ActiveMQ advisoryWhenFull Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   *
+   * @return
+   */
+  public boolean isAdvisoryWhenFullEnabled() {
+    return getDefaultPolicyEntry().isAdvisoryWhenFull();
+  }
+
+  /**
+   * Enable the ActiveMQ advisoryWhenFull Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
+  public void enableAdvisoryWhenFull() {
+    getDefaultPolicyEntry().setAdvisoryWhenFull(true);
+  }
+
+  /**
+   * Disable the ActiveMQ advisoryWhenFull Policy Entry.
+   * <p>
+   * See <a href="http://activemq.apache.org/advisory-message.html"/>
+   */
+  public void disableAdvisoryWhenFull() {
+    getDefaultPolicyEntry().setAdvisoryWhenFull(false);
   }
 
   /**
@@ -414,6 +701,7 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
    * of "queue://" is assumed.
    *
    * @param destinationName the full name of the JMS Destination
+   *
    * @return the number of messages in the JMS Destination
    */
   public long getMessageCount(String destinationName) {
@@ -421,7 +709,6 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
       throw new IllegalStateException("BrokerService has not yet been created - was before() called?");
     }
 
-    // TODO: Figure out how to do this for Topics
     Destination destination = getDestination(destinationName);
     if (destination == null) {
       throw new RuntimeException("Failed to find destination: " + destinationName);
@@ -439,7 +726,13 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
    * of "queue://" is assumed.
    *
    * @param destinationName the full name of the JMS Destination
-   * @return the ActiveMQ destination, null if not found
+   *
+   * @return the {@link org.apache.activemq.broker.region.Destination}, null if not found
+   *
+   * @throws EmbeddedActiveMQBrokerException if some exception occurs retrieving the {@link org.apache.activemq.broker.region.Destination}
+   *                                         from the {@link org.apache.activemq.broker.BrokerService}
+   *                                         IllegalStateException if the {@link org.apache.activemq.broker.BrokerService}
+   *                                         hasn't been created
    */
   public Destination getDestination(String destinationName) {
     if (null == brokerService) {
@@ -449,99 +742,39 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     Destination answer;
 
     try {
-      ActiveMQDestination tmpDestination;
-
-      if (destinationName.startsWith("queue://")) {
-        tmpDestination = new ActiveMQQueue(destinationName.substring("queue://".length()));
-      } else if (destinationName.startsWith("queue:/")) {
-        tmpDestination = new ActiveMQQueue(destinationName.substring("queue:/".length()));
-      } else if (destinationName.startsWith("queue:")) {
-        tmpDestination = new ActiveMQQueue(destinationName.substring("queue:".length()));
-      } else if (destinationName.startsWith("topic://")) {
-        tmpDestination = new ActiveMQTopic(destinationName.substring("topic://".length()));
-      } else if (destinationName.startsWith("topic:/")) {
-        tmpDestination = new ActiveMQTopic(destinationName.substring("topic:/".length()));
-      } else if (destinationName.startsWith("topic:")) {
-        tmpDestination = new ActiveMQTopic(destinationName.substring("topic:".length()));
-      } else if (destinationName.startsWith("temp-queue://")) {
-        tmpDestination = new ActiveMQTempQueue(destinationName.substring("temp-queue://".length()));
-      } else if (destinationName.startsWith("temp-queue:/")) {
-        tmpDestination = new ActiveMQTempQueue(destinationName.substring("temp-queue:/".length()));
-      } else if (destinationName.startsWith("temp-queue:")) {
-        tmpDestination = new ActiveMQTempQueue(destinationName.substring("temp-queue:".length()));
-      } else if (destinationName.startsWith("temp-topic://")) {
-        tmpDestination = new ActiveMQTempTopic(destinationName.substring("temp-topic://".length()));
-      } else if (destinationName.startsWith("temp-topic:/")) {
-        tmpDestination = new ActiveMQTempTopic(destinationName.substring("temp-topic:/".length()));
-      } else if (destinationName.startsWith("temp-topic:")) {
-        tmpDestination = new ActiveMQTempTopic(destinationName.substring("temp-topic:".length()));
-      } else {
-        tmpDestination = new ActiveMQQueue(destinationName);
-      }
+      ActiveMQDestination tmpDestination = createDestination(destinationName);
 
       answer = brokerService.getDestination(tmpDestination);
-    } catch (RuntimeException runtimeEx) {
-      throw runtimeEx;
-    } catch (Exception ex) {
-      throw new EmbeddedActiveMQBrokerException("Unexpected exception getting destination from broker", ex);
+    } catch (Exception unexpectedEx) {
+      throw new EmbeddedActiveMQBrokerException("Unexpected exception getting destination from broker", unexpectedEx);
     }
 
     return answer;
   }
 
-  private PolicyEntry getDefaultPolicyEntry() {
-    PolicyMap destinationPolicy = brokerService.getDestinationPolicy();
-    if (null == destinationPolicy) {
-      destinationPolicy = new PolicyMap();
-      brokerService.setDestinationPolicy(destinationPolicy);
-    }
-
-    PolicyEntry defaultEntry = destinationPolicy.getDefaultEntry();
-    if (null == defaultEntry) {
-      defaultEntry = new PolicyEntry();
-      destinationPolicy.setDefaultEntry(defaultEntry);
-    }
-
-    return defaultEntry;
-  }
-
+  /**
+   * Create a JMS {@link javax.jms.BytesMessage}.
+   */
   public BytesMessage createBytesMessage() {
     return internalClient.createBytesMessage();
   }
 
-  public TextMessage createTextMessage() {
-    return internalClient.createTextMessage();
+  /**
+   * Create a JMS {@link javax.jms.BytesMessage} with the specified body.
+   *
+   * @param body
+   */
+  public BytesMessage createBytesMessage(byte[] body) {
+    return this.createBytesMessage(body, null);
   }
 
-  public MapMessage createMapMessage() {
-    return internalClient.createMapMessage();
-  }
-
-  public ObjectMessage createObjectMessage() {
-    return internalClient.createObjectMessage();
-  }
-
-  public StreamMessage createStreamMessage() {
-    return internalClient.createStreamMessage();
-  }
-
-  public BytesMessage createMessage(byte[] body) {
-    return this.createMessage(body, null);
-  }
-
-  public TextMessage createMessage(String body) {
-    return this.createMessage(body, null);
-  }
-
-  public MapMessage createMessage(Map<String, Object> body) {
-    return this.createMessage(body, null);
-  }
-
-  public ObjectMessage createMessage(Serializable body) {
-    return this.createMessage(body, null);
-  }
-
-  public BytesMessage createMessage(byte[] body, Map<String, Object> properties) {
+  /**
+   * Create a JMS {@link javax.jms.BytesMessage} with the specified body and message properties.
+   *
+   * @param body
+   * @param properties
+   */
+  public BytesMessage createBytesMessage(byte[] body, Map<String, Object> properties) {
     BytesMessage message = this.createBytesMessage();
     if (body != null) {
       try {
@@ -556,7 +789,29 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     return message;
   }
 
-  public TextMessage createMessage(String body, Map<String, Object> properties) {
+  /**
+   * Create a JMS {@link javax.jms.TextMessage}
+   */
+  public TextMessage createTextMessage() {
+    return internalClient.createTextMessage();
+  }
+
+  /**
+   * Create a JMS {@link javax.jms.TextMessage} with the specified body.
+   *
+   * @param body
+   */
+  public TextMessage createTextMessage(String body) {
+    return this.createTextMessage(body, null);
+  }
+
+  /**
+   * Create a JMS {@link javax.jms.TextMessage} with the specified body and message properties.
+   *
+   * @param body
+   * @param properties
+   */
+  public TextMessage createTextMessage(String body, Map<String, Object> properties) {
     TextMessage message = this.createTextMessage();
     if (body != null) {
       try {
@@ -571,7 +826,29 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     return message;
   }
 
-  public MapMessage createMessage(Map<String, Object> body, Map<String, Object> properties) {
+  /**
+   * Create a JMS {@link javax.jms.MapMessage}
+   */
+  public MapMessage createMapMessage() {
+    return internalClient.createMapMessage();
+  }
+
+  /**
+   * Create a JMS {@link javax.jms.MapMessage} with the specified body.
+   *
+   * @param body
+   */
+  public MapMessage createMapMessage(Map<String, Object> body) {
+    return this.createMapMessage(body, null);
+  }
+
+  /**
+   * Create a JMS {@link javax.jms.MapMessage} with the specified body and message properties.
+   *
+   * @param body
+   * @param properties
+   */
+  public MapMessage createMapMessage(Map<String, Object> body, Map<String, Object> properties) {
     MapMessage message = this.createMapMessage();
 
     if (body != null) {
@@ -589,7 +866,29 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     return message;
   }
 
-  public ObjectMessage createMessage(Serializable body, Map<String, Object> properties) {
+  /**
+   * Create a JMS {@link javax.jms.ObjectMessage}
+   */
+  public ObjectMessage createObjectMessage() {
+    return internalClient.createObjectMessage();
+  }
+
+  /**
+   * Create a JMS {@link javax.jms.ObjectMessage} with the specified body.
+   *
+   * @param body
+   */
+  public ObjectMessage createObjectMessage(Serializable body) {
+    return this.createObjectMessage(body, null);
+  }
+
+  /**
+   * Create a JMS {@link javax.jms.ObjectMessage} with the specified body and message properties.
+   *
+   * @param body
+   * @param properties
+   */
+  public ObjectMessage createObjectMessage(Serializable body, Map<String, Object> properties) {
     ObjectMessage message = this.createObjectMessage();
 
     if (body != null) {
@@ -605,66 +904,149 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     return message;
   }
 
-  public void pushMessage(String destinationName, Message message) {
-    if (destinationName == null) {
-      throw new IllegalArgumentException("pushMessage failure - destination name is required");
+  /**
+   * Create a JMS {@link javax.jms.StreamMessage}
+   */
+  public StreamMessage createStreamMessage() {
+    return internalClient.createStreamMessage();
+  }
+
+  public StreamMessage createStreamMessage(Map<String, Object> properties) {
+    StreamMessage message = this.createStreamMessage();
+
+    setMessageProperties(message, properties);
+
+    return message;
+  }
+
+  /**
+   * Send the specified JMS {@link javax.jms.Message} to the specified destination.
+   *
+   * @param destinationName
+   * @param message
+   *
+   * @return the {@link javax.jms.Message} sent to the destination
+   */
+  public <T extends Message> T sendMessage(String destinationName, T message) {
+    if (destinationName == null || destinationName.isEmpty()) {
+      throw new IllegalArgumentException("putMessage failure - destination name is required");
     } else if (message == null) {
-      throw new IllegalArgumentException("pushMessage failure - a Message is required");
+      throw new IllegalArgumentException("putMessage failure - a Message is required");
     }
-    ActiveMQDestination destination = createDestination(destinationName);
 
-    internalClient.pushMessage(destination, message);
-  }
+    internalClient.sendMessage(destinationName, message);
 
-  public BytesMessage pushMessage(String destinationName, byte[] body) {
-    BytesMessage message = createMessage(body, null);
-    pushMessage(destinationName, message);
     return message;
   }
 
-  public TextMessage pushMessage(String destinationName, String body) {
-    TextMessage message = createMessage(body, null);
-    pushMessage(destinationName, message);
-    return message;
+  /**
+   * Send a JMS {@link javax.jms.BytesMessage} with the specified body to the specified destination.
+   *
+   * @param destinationName
+   * @param body
+   *
+   * @return the {@link javax.jms.BytesMessage} sent to the destination
+   */
+  public BytesMessage sendBytesMessage(String destinationName, byte[] body) {
+    return sendMessage(destinationName, createBytesMessage(body));
   }
 
-  public MapMessage pushMessage(String destinationName, Map<String, Object> body) {
-    MapMessage message = createMessage(body, null);
-    pushMessage(destinationName, message);
-    return message;
+  /**
+   * Send a JMS {@link javax.jms.BytesMessage} with the specified body and message properties to the specified
+   * destination.
+   *
+   * @param destinationName
+   * @param body
+   *
+   * @return the {@link javax.jms.BytesMessage} sent to the destination
+   */
+  public BytesMessage sendBytesMessage(String destinationName, byte[] body, Map<String, Object> properties) {
+    return sendMessage(destinationName, createBytesMessage(body, properties));
   }
 
-  public ObjectMessage pushMessage(String destinationName, Serializable body) {
-    ObjectMessage message = createMessage(body, null);
-    pushMessage(destinationName, message);
-    return message;
+  /**
+   * Send a JMS {@link javax.jms.TextMessage} with the specified body to the specified destination.
+   *
+   * @param destinationName
+   * @param body
+   *
+   * @return the {@link javax.jms.TextMessage} sent to the destination
+   */
+  public TextMessage sendTextMessage(String destinationName, String body) {
+    return sendMessage(destinationName, createTextMessage(body));
   }
 
-  public BytesMessage pushMessageWithProperties(String destinationName, byte[] body, Map<String, Object> properties) {
-    BytesMessage message = createMessage(body, properties);
-    pushMessage(destinationName, message);
-    return message;
+  /**
+   * Send a JMS {@link javax.jms.TextMessage} with the specified body and message properties to the specified
+   * destination.
+   *
+   * @param destinationName
+   * @param body
+   *
+   * @return the {@link javax.jms.TextMessage} sent to the destination
+   */
+  public TextMessage sendTextMessage(String destinationName, String body, Map<String, Object> properties) {
+    return sendMessage(destinationName, createTextMessage(body, properties));
   }
 
-  public TextMessage pushMessageWithProperties(String destinationName, String body, Map<String, Object> properties) {
-    TextMessage message = createMessage(body, properties);
-    pushMessage(destinationName, message);
-    return message;
+  /**
+   * Send a JMS {@link javax.jms.MapMessage} with the specified body to the specified destination.
+   *
+   * @param destinationName
+   * @param body
+   *
+   * @return the {@link javax.jms.MapMessage} sent to the destination
+   */
+  public MapMessage sendMapMessage(String destinationName, Map<String, Object> body) {
+    return sendMessage(destinationName, createMapMessage(body));
   }
 
-  public MapMessage pushMessageWithProperties(String destinationName, Map<String, Object> body, Map<String, Object> properties) {
-    MapMessage message = createMessage(body, properties);
-    pushMessage(destinationName, message);
-    return message;
+  /**
+   * Send a JMS {@link javax.jms.MapMessage} with the specified body and message properties to the specified
+   * destination.
+   *
+   * @param destinationName
+   * @param body
+   *
+   * @return the {@link javax.jms.MapMessage} sent to the destination
+   */
+  public MapMessage sendMapMessage(String destinationName, Map<String, Object> body, Map<String, Object> properties) {
+    return sendMessage(destinationName, createMapMessage(body));
   }
 
-  public ObjectMessage pushMessageWithProperties(String destinationName, Serializable body, Map<String, Object> properties) {
-    ObjectMessage message = createMessage(body, properties);
-    pushMessage(destinationName, message);
-    return message;
+  /**
+   * Send a JMS {@link javax.jms.ObjectMessage} with the specified body to the specified destination.
+   *
+   * @param destinationName
+   * @param body
+   *
+   * @return the {@link javax.jms.ObjectMessage} sent to the destination
+   */
+  public ObjectMessage sendObjectMessage(String destinationName, Serializable body) {
+    return sendMessage(destinationName, createObjectMessage(body));
   }
 
 
+  /**
+   * Send a JMS {@link javax.jms.ObjectMessage} with the specified body and message properties to the specified
+   * destination.
+   *
+   * @param destinationName
+   * @param body
+   *
+   * @return the {@link javax.jms.ObjectMessage} sent to the destination
+   */
+  public ObjectMessage sendObjectMessage(String destinationName, Serializable body, Map<String, Object> properties) {
+    return sendMessage(destinationName, createObjectMessage(body));
+  }
+
+  /**
+   * Get the next {@link javax.jms.Message} from the specified destination without consuming the message.
+   *
+   * @param destinationName
+   *
+   * @return the next {@link javax.jms.Message}
+   */
   public Message peekMessage(String destinationName) {
     if (null == brokerService) {
       throw new NullPointerException("peekMessage failure  - BrokerService is null");
@@ -695,49 +1077,90 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     return null;
   }
 
+  /**
+   * Get the next {@link javax.jms.Message} from the specified destination without consuming the message.
+   *
+   * @param destinationName
+   *
+   * @return the next {@link javax.jms.BytesMessage}
+   *
+   * @throws {@link ClassCastException} if the message is not a {@link javax.jms.BytesMessage}
+   */
   public BytesMessage peekBytesMessage(String destinationName) {
     return (BytesMessage) peekMessage(destinationName);
   }
 
+  /**
+   * Get the next {@link javax.jms.Message} from the specified destination without consuming the message.
+   *
+   * @param destinationName
+   *
+   * @return the next {@link javax.jms.TextMessage}
+   *
+   * @throws {@link ClassCastException} if the message is not a {@link javax.jms.TextMessage}
+   */
   public TextMessage peekTextMessage(String destinationName) {
     return (TextMessage) peekMessage(destinationName);
   }
 
+  /**
+   * Get the next {@link javax.jms.Message} from the specified destination without consuming the message.
+   *
+   * @param destinationName
+   *
+   * @return the next {@link javax.jms.MapMessage}
+   *
+   * @throws {@link ClassCastException} if the message is not a {@link javax.jms.MapMessage}
+   */
   public MapMessage peekMapMessage(String destinationName) {
     return (MapMessage) peekMessage(destinationName);
   }
 
+  /**
+   * Get the next {@link javax.jms.Message} from the specified destination without consuming the message.
+   *
+   * @param destinationName
+   *
+   * @return the next {@link javax.jms.ObjectMessage}
+   *
+   * @throws {@link ClassCastException} if the message is not a {@link javax.jms.ObjectMessage}
+   */
   public ObjectMessage peekObjectMessage(String destinationName) {
     return (ObjectMessage) peekMessage(destinationName);
   }
 
+  /**
+   * Get the next {@link javax.jms.Message} from the specified destination without consuming the message.
+   *
+   * @param destinationName
+   *
+   * @return the next {@link javax.jms.StreamMessage}
+   *
+   * @throws {@link ClassCastException} if the message is not a {@link javax.jms.StreamMessage}
+   */
   public StreamMessage peekStreamMessage(String destinationName) {
     return (StreamMessage) peekMessage(destinationName);
   }
 
-  ActiveMQDestination createDestination(String destinationName) {
-    if (destinationName.startsWith("queue://")) {
-      return new ActiveMQQueue(destinationName.substring("queue://".length()));
-    } else if (destinationName.startsWith("queue:")) {
-      return new ActiveMQQueue(destinationName.substring("queue:".length()));
-    } else if (destinationName.startsWith("topic://")) {
-      return new ActiveMQTopic(destinationName.substring("topic://".length()));
-    } else if (destinationName.startsWith("topic:")) {
-      return new ActiveMQTopic(destinationName.substring("topic:".length()));
-    } else if (destinationName.startsWith("temp-queue://")) {
-      return new ActiveMQTempQueue(destinationName.substring("temp-queue://".length()));
-    } else if (destinationName.startsWith("temp-queue:")) {
-      return new ActiveMQTempQueue(destinationName.substring("temp-queue:".length()));
-    } else if (destinationName.startsWith("temp-topic://")) {
-      return new ActiveMQTempTopic(destinationName.substring("temp-topic://".length()));
-    } else if (destinationName.startsWith("temp-topic:")) {
-      return new ActiveMQTempTopic(destinationName.substring("temp-topic:".length()));
-    } else {
-      return new ActiveMQQueue(destinationName);
+  private PolicyEntry getDefaultPolicyEntry() {
+    PolicyMap destinationPolicy = brokerService.getDestinationPolicy();
+    if (null == destinationPolicy) {
+      destinationPolicy = new PolicyMap();
+      brokerService.setDestinationPolicy(destinationPolicy);
     }
 
+    PolicyEntry defaultEntry = destinationPolicy.getDefaultEntry();
+    if (null == defaultEntry) {
+      defaultEntry = new PolicyEntry();
+      destinationPolicy.setDefaultEntry(defaultEntry);
+    }
+
+    return defaultEntry;
   }
 
+  /**
+   * Exception class for all Embedded broker exceptions.
+   */
   public static class EmbeddedActiveMQBrokerException extends RuntimeException {
     public EmbeddedActiveMQBrokerException(String message) {
       super(message);
@@ -748,17 +1171,23 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
     }
   }
 
+  /**
+   * An Internal JMS Client for this broker.
+   * <p>
+   * The client will be used for creating messages and putting them on destinations.
+   */
   private class InternalClient {
     ActiveMQConnectionFactory connectionFactory;
     Connection connection;
     Session session;
     MessageProducer producer;
 
-    public InternalClient() {
-    }
-
+    /**
+     * Start the internal client
+     */
     void start() {
-      connectionFactory = createConnectionFactory();
+      ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
+      connectionFactory.setBrokerURL(brokerService.getVmConnectorURI().toString() + "?create=false");
       try {
         connection = connectionFactory.createConnection();
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -769,16 +1198,40 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
       }
     }
 
+    /**
+     * Stop the internal client and clean-up
+     */
     void stop() {
+      if (producer != null) {
+        try {
+          producer.close();
+        } catch (JMSException jmsEx) {
+          log.warn("JMSException encounter closing InternalClient JMS Producer - ignoring", jmsEx);
+        }
+      }
+      if (session != null) {
+        try {
+          session.close();
+        } catch (JMSException jmsEx) {
+          log.warn("JMSException encounter closing InternalClient JMS Session - ignoring", jmsEx);
+        }
+      }
       if (null != connection) {
         try {
           connection.close();
         } catch (JMSException jmsEx) {
-          log.warn("JMSException encounter closing InternalClient connection - ignoring", jmsEx);
+          log.warn("JMSException encounter closing InternalClient JMS Connection - ignoring", jmsEx);
         }
       }
+      connectionFactory = null;
+      connection = null;
+      session = null;
+      producer = null;
     }
 
+    /**
+     * Create an empty {@link javax.jms.BytesMessage}
+     */
     public BytesMessage createBytesMessage() {
       checkSession();
 
@@ -789,6 +1242,15 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
       }
     }
 
+    void checkSession() {
+      if (session == null) {
+        throw new IllegalStateException("JMS Session is null - has the InternalClient been started?");
+      }
+    }
+
+    /**
+     * Create an empty {@link javax.jms.TextMessage}
+     */
     public TextMessage createTextMessage() {
       checkSession();
 
@@ -799,6 +1261,9 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
       }
     }
 
+    /**
+     * Create an empty {@link javax.jms.MapMessage}
+     */
     public MapMessage createMapMessage() {
       checkSession();
 
@@ -809,6 +1274,9 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
       }
     }
 
+    /**
+     * Create an empty {@link javax.jms.ObjectMessage}
+     */
     public ObjectMessage createObjectMessage() {
       checkSession();
 
@@ -819,6 +1287,9 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
       }
     }
 
+    /**
+     * Create an empty {@link javax.jms.StreamMessage}
+     */
     public StreamMessage createStreamMessage() {
       checkSession();
       try {
@@ -828,21 +1299,21 @@ public class EmbeddedActiveMQBroker extends ExternalResource {
       }
     }
 
-    public void pushMessage(ActiveMQDestination destination, Message message) {
+    /**
+     * Send a JMS Message to the ActiveMQ Destination.
+     *
+     * @param destinationName
+     * @param message
+     */
+    public void sendMessage(String destinationName, Message message) {
       if (producer == null) {
         throw new IllegalStateException("JMS MessageProducer is null - has the InternalClient been started?");
       }
 
       try {
-        producer.send(destination, message);
+        producer.send(createDestination(destinationName), message);
       } catch (JMSException jmsEx) {
-        throw new EmbeddedActiveMQBrokerException(String.format("Failed to push %s to %s", message.getClass().getSimpleName(), destination.toString()), jmsEx);
-      }
-    }
-
-    void checkSession() {
-      if (session == null) {
-        throw new IllegalStateException("JMS Session is null - has the InternalClient been started?");
+        throw new EmbeddedActiveMQBrokerException(String.format("Failed to push %s to %s", message.getClass().getSimpleName(), destinationName), jmsEx);
       }
     }
 
