@@ -36,12 +36,7 @@ public class EmbeddedBrokerAssert {
    * @throws RuntimeException if the destination is not found in the broker
    */
   public static void assertMessageCount(String message, EmbeddedActiveMQBroker broker, String destinationName, long expected) {
-    Destination brokerDestination = getDestination(broker, destinationName);
-    if (brokerDestination == null) {
-      throw new RuntimeException(String.format("Destination % not found in broker %s", destinationName, broker.getBrokerName()));
-    }
-
-    Assert.assertEquals(message, expected, brokerDestination.getDestinationStatistics().getMessages().getCount());
+    Assert.assertEquals(message, expected, broker.getMessageCount(destinationName));
   }
 
   /**
@@ -59,7 +54,7 @@ public class EmbeddedBrokerAssert {
   }
 
   public static void assertContainsDestination(String message, EmbeddedActiveMQBroker broker, String expected) {
-    Assert.assertTrue(message, (null != getDestination(broker, expected)));
+    Assert.assertTrue(message, (null != broker.getDestination(expected)));
   }
 
   public static void assertNotContainsDestination(EmbeddedActiveMQBroker broker, String expected) {
@@ -69,34 +64,8 @@ public class EmbeddedBrokerAssert {
   }
 
   public static void assertNotContainsDestination(String message, EmbeddedActiveMQBroker broker, String expected) {
-    Assert.assertFalse(message, (null != getDestination(broker, expected)));
+    Assert.assertFalse(message, (null != broker.getDestination(expected)));
   }
 
-
-  /**
-   * Get a {@link org.apache.activemq.broker.region.Destination} from the @{link org.apache.activemq.broker.BrokerService}
-   *
-   * @param broker
-   * @param destinationName
-   *
-   * @return the {@link org.apache.activemq.broker.region.Destination}, or null if the destination is not found
-   *
-   * @throws RuntimeException if there is an exception retrieving the destination from the broker service
-   */
-  static Destination getDestination(EmbeddedActiveMQBroker broker, String destinationName) {
-    ActiveMQDestination activeMQDestination = ActiveMQDestination.createDestination(destinationName, ActiveMQDestination.QUEUE_TYPE);
-    Destination brokerDestination = null;
-    try {
-      brokerDestination = broker.getBrokerService().getDestination(activeMQDestination);
-    } catch (RuntimeException runtimeEx) {
-      throw runtimeEx;
-    } catch (Exception unexpectedEx) {
-      String exceptionMessage = String.format("Unexpected exception encountered retrieving destination %s from BrokerService %s",
-          activeMQDestination.toString(), broker.getBrokerName());
-      throw new RuntimeException(exceptionMessage, unexpectedEx);
-    }
-
-    return brokerDestination;
-  }
 
 }
