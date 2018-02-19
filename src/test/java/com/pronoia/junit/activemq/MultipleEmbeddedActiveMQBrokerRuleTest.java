@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,20 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.pronoia.junit.activemq;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class MultipleEmbeddedActiveMQBrokerRuleTest {
-    final String brokerOneName = "broker-one";
-    final String brokerTwoName = "broker-two";
+    static final String BROKER_ONE_NAME = "broker-one";
+    static final String BROKER_TWO_NAME = "broker-two";
 
     @Rule
     public EmbeddedActiveMQBroker brokerOne = new EmbeddedActiveMQBroker();
@@ -37,8 +36,8 @@ public class MultipleEmbeddedActiveMQBrokerRuleTest {
 
     public MultipleEmbeddedActiveMQBrokerRuleTest() {
         // Perform and broker configuation here before JUnit starts the brokers
-        brokerOne.setBrokerName(brokerOneName);
-        brokerTwo.setBrokerName(brokerTwoName);
+        brokerOne.setBrokerName(BROKER_ONE_NAME);
+        brokerTwo.setBrokerName(BROKER_TWO_NAME);
     }
 
     @Before
@@ -55,7 +54,7 @@ public class MultipleEmbeddedActiveMQBrokerRuleTest {
 
     @Test
     public void testStart() throws Exception {
-        assertEquals("Broker One name is incorrect", brokerOneName, brokerOne.getBrokerName());
-        assertEquals("Broker Two name is incorrect", brokerTwoName, brokerTwo.getBrokerName());
+        assertEquals("Broker One name is incorrect", BROKER_ONE_NAME, brokerOne.getBrokerName());
+        assertEquals("Broker Two name is incorrect", BROKER_TWO_NAME, brokerTwo.getBrokerName());
     }
 }

@@ -1,10 +1,10 @@
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements. See the NOTICE file distributed with
+ * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.pronoia.junit.activemq;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -24,7 +23,11 @@ import org.apache.activemq.pool.PooledConnectionFactory;
 /**
  * Utilities for creating ConnectionFactories for embedded brokers.
  */
-public class VmConnectionFactoryUtils {
+public final class VmConnectionFactoryUtils {
+    private VmConnectionFactoryUtils() {
+        // Unused - utility class
+    }
+
     /**
      * Create an {@link org.apache.activemq.ActiveMQConnectionFactory} for the embedded ActiveMQ Brokers
      *

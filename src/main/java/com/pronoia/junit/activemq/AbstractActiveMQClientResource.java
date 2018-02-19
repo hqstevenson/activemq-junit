@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,10 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.pronoia.junit.activemq;
-
-import static com.pronoia.junit.activemq.VmConnectionFactoryUtils.createConnectionFactoryWithFailover;
 
 import java.io.Serializable;
 import java.net.URI;
@@ -38,6 +35,8 @@ import org.apache.activemq.command.ActiveMQDestination;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.pronoia.junit.activemq.VmConnectionFactoryUtils.createConnectionFactoryWithFailover;
 
 /**
  * Abstract base class for ActiveMQ client resources.
