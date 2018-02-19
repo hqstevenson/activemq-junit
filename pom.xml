@@ -6,7 +6,7 @@
 
     <groupId>com.github.hqstevenson.junit</groupId>
     <artifactId>activemq-junit</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 
     <name>ActiveMQ JUnit Utilities</name>
     <description>
