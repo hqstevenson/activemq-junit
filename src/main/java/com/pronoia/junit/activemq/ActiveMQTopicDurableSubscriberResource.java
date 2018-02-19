@@ -14,15 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.pronoia.junit.activemq;
 
 import java.net.URI;
+
 import javax.jms.JMSException;
 import javax.jms.Topic;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.command.ActiveMQDestination;
 
+/**
+ * ActiveMQ durable Topic Subscriber client resource.
+ */
 public class ActiveMQTopicDurableSubscriberResource extends AbstractActiveMQConsumerResource {
     String clientId = "test-client-id";
     String subscriberName = "test-subscriber";
@@ -44,11 +49,6 @@ public class ActiveMQTopicDurableSubscriberResource extends AbstractActiveMQCons
     }
 
     @Override
-    public byte getDestinationType() {
-        return ActiveMQDestination.TOPIC_TYPE;
-    }
-
-    @Override
     protected void createClient() throws JMSException {
         consumer = session.createDurableSubscriber((Topic) destination, subscriberName);
     }
@@ -56,6 +56,11 @@ public class ActiveMQTopicDurableSubscriberResource extends AbstractActiveMQCons
     @Override
     public String getClientId() {
         return clientId;
+    }
+
+    @Override
+    public byte getDestinationType() {
+        return ActiveMQDestination.TOPIC_TYPE;
     }
 
     public void setClientId(String clientId) {

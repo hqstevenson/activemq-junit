@@ -14,11 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.pronoia.junit.activemq;
 
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Map;
+
 import javax.jms.BytesMessage;
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
@@ -30,6 +32,9 @@ import javax.jms.TextMessage;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.command.ActiveMQDestination;
 
+/**
+ * ActiveMQ Topic Publisher client Resource that can publish to dynamic destination names.
+ */
 public class ActiveMQDynamicTopicPublisherResource extends AbstractActiveMQProducerResource {
     public ActiveMQDynamicTopicPublisherResource(ActiveMQConnectionFactory connectionFactory) {
         super(connectionFactory);
@@ -61,6 +66,11 @@ public class ActiveMQDynamicTopicPublisherResource extends AbstractActiveMQProdu
 
     public ActiveMQDynamicTopicPublisherResource(String defaultDestinationName, URI brokerURI, String userName, String password) {
         super(defaultDestinationName, brokerURI, userName, password);
+    }
+
+    @Override
+    public String getClientId() {
+        return null;
     }
 
     @Override

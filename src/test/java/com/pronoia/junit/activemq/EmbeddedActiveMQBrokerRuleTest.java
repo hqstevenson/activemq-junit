@@ -14,13 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.pronoia.junit.activemq;
+
+import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 public class EmbeddedActiveMQBrokerRuleTest {
     @Rule
@@ -28,12 +30,12 @@ public class EmbeddedActiveMQBrokerRuleTest {
 
     @Before
     public void setUp() throws Exception {
-        assertTrue( "Broker should be started", broker.brokerService.isStarted());
+        assertTrue("Broker should be started", broker.brokerService.isStarted());
     }
 
     @After
     public void tearDown() throws Exception {
-        assertTrue( "Broker should still be running", broker.brokerService.isStarted());
+        assertTrue("Broker should still be running", broker.brokerService.isStarted());
     }
 
     @Test

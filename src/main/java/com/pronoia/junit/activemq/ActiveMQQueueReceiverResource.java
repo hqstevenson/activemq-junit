@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.pronoia.junit.activemq;
 
 import java.net.URI;
@@ -21,6 +22,9 @@ import java.net.URI;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.command.ActiveMQDestination;
 
+/**
+ * ActiveMQ Queue Receiver client resource.
+ */
 public class ActiveMQQueueReceiverResource extends AbstractActiveMQConsumerResource {
     public ActiveMQQueueReceiverResource(String destinationName, ActiveMQConnectionFactory connectionFactory) {
         super(destinationName, connectionFactory);
@@ -36,6 +40,11 @@ public class ActiveMQQueueReceiverResource extends AbstractActiveMQConsumerResou
 
     public ActiveMQQueueReceiverResource(String destinationName, URI brokerURI, String userName, String password) {
         super(destinationName, brokerURI, userName, password);
+    }
+
+    @Override
+    public String getClientId() {
+        return null;
     }
 
     @Override

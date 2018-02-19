@@ -4,15 +4,50 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.pronoia.junit</groupId>
+    <groupId>com.github.hqstevenson.junit</groupId>
     <artifactId>activemq-junit</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <name>ActiveMQ JUnit Utilities</name>
+    <description>
+        A library of JUnit assertions and resources to assist in testing with ActiveMQ clients and brokers.
+    </description>
+    <url>https://github.com/hqstevenson/activemq-junit</url>
 
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Quinn Stevenson</name>
+            <email>quinn@pronoia-solutions.com</email>
+            <organization>Pronoia Solutions</organization>
+            <organizationUrl>https://github.com/hqstevenson</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/hqstevenson/activemq-junit.git</connection>
+        <developerConnection>scm:git:https://github.com/hqstevenson/activemq-junit.git</developerConnection>
+        <url>https://github.com/hqstevenson/activemq-junit/tree/master</url>
+    </scm>
+
+    <!-- ensure that the versions of spring-context and activemq-spring are compatible
+        ActiveMQ      =>  Spring
+          5.15.[0-3]  =>    4.3.9.RELEASE
+          5.14.[0-5]  =>    4.1.9.RELEASE
+          5.13.[1-5]  =>    4.1.9.RELEASE
+          5.13.0      =>    4.1.8.RELEASE
+          5.12.3      =>    3.2.16.RELEASE
+          5.12.[0-2]  =>    3.2.11.RELEASE
+          5.11.4      =>    3.2.16.RELEASE
+          5.11.[0-3]  =>    3.2.11.RELEASE
+    -->
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <activemq-version>5.14.4</activemq-version>
         <spring-version>4.1.9.RELEASE</spring-version>
         <junit-version>4.12</junit-version>
@@ -32,7 +67,7 @@
         </dependency>
 
         <dependency>
-            <!-- Required for JMS client JUnit Rules -->
+            <!-- Required for JMS client JUnit Resources -->
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-client</artifactId>
             <version>${activemq-version}</version>
@@ -40,7 +75,7 @@
         </dependency>
 
         <dependency>
-            <!-- Required for Embedded broker JUnit Rules -->
+            <!-- Required for Embedded broker JUnit Resources -->
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-broker</artifactId>
             <version>${activemq-version}</version>
@@ -63,16 +98,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- ensure that the versions of spring-context and activemq-spring are compatible
-            ActiveMQ      =>  Spring
-              5.14.[0-4]  =>    4.1.9.RELEASE
-              5.13.[1-5]  =>    4.1.9.RELEASE
-              5.13.0      =>    4.1.8.RELEASE
-              5.12.3      =>    3.2.16.RELEASE
-              5.12.[0-2]  =>    3.2.11.RELEASE
-              5.11.4      =>    3.2.16.RELEASE
-              5.11.[0-3]  =>    3.2.11.RELEASE
-        -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
@@ -104,41 +129,98 @@
                 <version>3.0.0</version>
             </plugin>
             <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.0.2</version>
-                <configuration>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                </configuration>
-            </plugin>
-            <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.1</version>
+                <version>3.7.0</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19.1</version>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.8.2</version>
             </plugin>
             <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-install-plugin</artifactId>
                 <version>2.5.2</version>
             </plugin>
             <plugin>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <version>2.8.2</version>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.0.2</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>3.6</version>
+                <version>3.7</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.20.1</version>
+            </plugin>
+
+            <!-- other groupIds -->
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.8</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
 
 </project>

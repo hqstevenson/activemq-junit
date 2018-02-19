@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.pronoia.junit.activemq;
 
 import static com.pronoia.junit.activemq.VmConnectionFactoryUtils.createConnectionFactoryWithFailover;
@@ -21,6 +22,7 @@ import static com.pronoia.junit.activemq.VmConnectionFactoryUtils.createConnecti
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Map;
+
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -30,222 +32,227 @@ import javax.jms.ObjectMessage;
 import javax.jms.Session;
 import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
+
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.command.ActiveMQDestination;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Abstract base class for ActiveMQ client resources.
+ */
 public abstract class AbstractActiveMQClientResource extends ExternalResource {
-  Logger log = LoggerFactory.getLogger(this.getClass());
+    Logger log = LoggerFactory.getLogger(this.getClass());
 
-  ActiveMQConnectionFactory connectionFactory;
-  Connection connection;
-  Session session;
-  ActiveMQDestination destination;
+    ActiveMQConnectionFactory connectionFactory;
+    Connection connection;
+    Session session;
+    ActiveMQDestination destination;
 
-  public AbstractActiveMQClientResource(URI brokerURI) {
-    this(new ActiveMQConnectionFactory(brokerURI));
-  }
-
-  public AbstractActiveMQClientResource(ActiveMQConnectionFactory connectionFactory) {
-    this.connectionFactory = connectionFactory;
-  }
-
-  public AbstractActiveMQClientResource(EmbeddedActiveMQBroker embeddedActiveMQBroker) {
-    this(createConnectionFactoryWithFailover(embeddedActiveMQBroker));
-  }
-
-  public AbstractActiveMQClientResource(URI brokerURI, String userName, String password) {
-    this(new ActiveMQConnectionFactory(userName, password, brokerURI));
-  }
-
-  public AbstractActiveMQClientResource(String destinationName, URI brokerURI) {
-    this(destinationName, new ActiveMQConnectionFactory(brokerURI));
-  }
-
-  public AbstractActiveMQClientResource(String destinationName, ActiveMQConnectionFactory connectionFactory) {
-    this(connectionFactory);
-    destination = createDestination(destinationName);
-  }
-
-  protected ActiveMQDestination createDestination(String destinationName) {
-    if (destinationName != null) {
-      return ActiveMQDestination.createDestination(destinationName, getDestinationType());
+    public AbstractActiveMQClientResource(URI brokerURI) {
+        this(new ActiveMQConnectionFactory(brokerURI));
     }
 
-    return null;
-  }
-
-  public abstract byte getDestinationType();
-
-  public AbstractActiveMQClientResource(String destinationName, EmbeddedActiveMQBroker embeddedActiveMQBroker) {
-    this(destinationName, createConnectionFactoryWithFailover(embeddedActiveMQBroker));
-  }
-
-  public AbstractActiveMQClientResource(String destinationName, URI brokerURI, String userName, String password) {
-    this(destinationName, new ActiveMQConnectionFactory(userName, password, brokerURI));
-  }
-
-  public String getDestinationName() {
-    return (destination != null) ? destination.toString() : null;
-  }
-
-  /**
-   * Start the Client
-   * <p/>
-   * Invoked by JUnit to setup the resource
-   */
-  @Override
-  protected void before() throws Throwable {
-    log.info("Starting {}: {}", this.getClass().getSimpleName(), connectionFactory.getBrokerURL());
-
-    this.start();
-
-    super.before();
-  }
-
-  /**
-   * Stop the Client
-   * <p/>
-   * Invoked by JUnit to tear down the resource
-   */
-  @Override
-  protected void after() {
-    log.info("Stopping {}: {}", this.getClass().getSimpleName(), connectionFactory.getBrokerURL());
-
-    super.after();
-
-    this.stop();
-  }
-
-  public void stop() {
-    try {
-      connection.close();
-    } catch (JMSException jmsEx) {
-      log.warn("Exception encountered closing JMS Connection", jmsEx);
+    public AbstractActiveMQClientResource(ActiveMQConnectionFactory connectionFactory) {
+        this.connectionFactory = connectionFactory;
     }
-  }
 
-  public void start() {
-    try {
-      try {
-        connection = connectionFactory.createConnection();
-        String clientId = getClientId();
-        if (clientId != null) {
-          connection.setClientID(clientId);
+    public AbstractActiveMQClientResource(EmbeddedActiveMQBroker embeddedActiveMQBroker) {
+        this(createConnectionFactoryWithFailover(embeddedActiveMQBroker));
+    }
+
+    public AbstractActiveMQClientResource(URI brokerURI, String userName, String password) {
+        this(new ActiveMQConnectionFactory(userName, password, brokerURI));
+    }
+
+    public AbstractActiveMQClientResource(String destinationName, URI brokerURI) {
+        this(destinationName, new ActiveMQConnectionFactory(brokerURI));
+    }
+
+    public AbstractActiveMQClientResource(String destinationName, ActiveMQConnectionFactory connectionFactory) {
+        this(connectionFactory);
+        destination = createDestination(destinationName);
+    }
+
+    public AbstractActiveMQClientResource(String destinationName, EmbeddedActiveMQBroker embeddedActiveMQBroker) {
+        this(destinationName, createConnectionFactoryWithFailover(embeddedActiveMQBroker));
+    }
+
+
+    public AbstractActiveMQClientResource(String destinationName, URI brokerURI, String userName, String password) {
+        this(destinationName, new ActiveMQConnectionFactory(userName, password, brokerURI));
+    }
+
+    public static void setMessageProperties(Message message, Map<String, Object> properties) throws JMSException {
+        if (properties != null) {
+            for (Map.Entry<String, Object> property : properties.entrySet()) {
+                message.setObjectProperty(property.getKey(), property.getValue());
+            }
         }
-        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        createClient();
-      } catch (JMSException jmsEx) {
-        throw new RuntimeException("Producer initialization failed" + this.getClass().getSimpleName(), jmsEx);
-      }
-      connection.start();
-    } catch (JMSException jmsEx) {
-      throw new IllegalStateException("Producer failed to start", jmsEx);
-    }
-    log.info("Ready to produce messages to {}", connectionFactory.getBrokerURL());
-  }
-
-  public String getClientId() {
-    return null;
-  }
-
-  protected abstract void createClient() throws JMSException;
-
-  public String getBrokerURL() {
-    return connectionFactory.getBrokerURL();
-  }
-
-  public StreamMessage createStreamMessage() throws JMSException {
-    return session.createStreamMessage();
-  }
-
-  public BytesMessage createMessage(byte[] body) throws JMSException {
-    return this.createMessage(body, null);
-  }
-
-  public BytesMessage createMessage(byte[] body, Map<String, Object> properties) throws JMSException {
-    BytesMessage message = this.createBytesMessage();
-    if (body != null) {
-      message.writeBytes(body);
     }
 
-    setMessageProperties(message, properties);
+    public abstract String getClientId();
 
-    return message;
-  }
+    protected abstract void createClient() throws JMSException;
 
-  public BytesMessage createBytesMessage() throws JMSException {
-    return session.createBytesMessage();
-  }
+    protected ActiveMQDestination createDestination(String destinationName) {
+        if (destinationName != null) {
+            return ActiveMQDestination.createDestination(destinationName, getDestinationType());
+        }
 
-  public static void setMessageProperties(Message message, Map<String, Object> properties) throws JMSException {
-    if (properties != null) {
-      for (Map.Entry<String, Object> property : properties.entrySet()) {
-        message.setObjectProperty(property.getKey(), property.getValue());
-      }
-    }
-  }
-
-  public TextMessage createMessage(String body) throws JMSException {
-    return this.createMessage(body, null);
-  }
-
-  public TextMessage createMessage(String body, Map<String, Object> properties) throws JMSException {
-    TextMessage message = this.createTextMessage();
-    if (body != null) {
-      message.setText(body);
+        return null;
     }
 
-    setMessageProperties(message, properties);
+    public abstract byte getDestinationType();
 
-    return message;
-  }
-
-  public TextMessage createTextMessage() throws JMSException {
-    return session.createTextMessage();
-  }
-
-  public MapMessage createMessage(Map<String, Object> body) throws JMSException {
-    return this.createMessage(body, null);
-  }
-
-  public MapMessage createMessage(Map<String, Object> body, Map<String, Object> properties) throws JMSException {
-    MapMessage message = this.createMapMessage();
-
-    if (body != null) {
-      for (Map.Entry<String, Object> entry : body.entrySet()) {
-        message.setObject(entry.getKey(), entry.getValue());
-      }
+    public String getDestinationName() {
+        return (destination != null) ? destination.toString() : null;
     }
 
-    setMessageProperties(message, properties);
+    /**
+     * Invoked by JUnit to setup the client resource.
+     */
+    @Override
+    protected void before() throws Throwable {
+        log.info("Starting {}: {}", this.getClass().getSimpleName(), connectionFactory.getBrokerURL());
 
-    return message;
-  }
+        this.start();
 
-  public MapMessage createMapMessage() throws JMSException {
-    return session.createMapMessage();
-  }
-
-  public ObjectMessage createMessage(Serializable body) throws JMSException {
-    return this.createMessage(body, null);
-  }
-
-  public ObjectMessage createMessage(Serializable body, Map<String, Object> properties) throws JMSException {
-    ObjectMessage message = this.createObjectMessage();
-
-    if (body != null) {
-      message.setObject(body);
+        super.before();
     }
 
-    setMessageProperties(message, properties);
+    /**
+     * Invoked by JUnit to tear down the client resource.
+     */
+    @Override
+    protected void after() {
+        log.info("Stopping {}: {}", this.getClass().getSimpleName(), connectionFactory.getBrokerURL());
 
-    return message;
-  }
+        super.after();
 
-  public ObjectMessage createObjectMessage() throws JMSException {
-    return session.createObjectMessage();
-  }
+        this.stop();
+    }
+
+    /**
+     * Manually stop the Client.
+     */
+    public void stop() {
+        try {
+            connection.close();
+        } catch (JMSException jmsEx) {
+            log.warn("Exception encountered closing JMS Connection", jmsEx);
+        }
+    }
+
+    /**
+     * Manually start the Client.
+     */
+    public void start() {
+        try {
+            try {
+                connection = connectionFactory.createConnection();
+                String clientId = getClientId();
+                if (clientId != null) {
+                    connection.setClientID(clientId);
+                }
+                session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                createClient();
+            } catch (JMSException jmsEx) {
+                throw new RuntimeException("Producer initialization failed" + this.getClass().getSimpleName(), jmsEx);
+            }
+            connection.start();
+        } catch (JMSException jmsEx) {
+            throw new IllegalStateException("Producer failed to start", jmsEx);
+        }
+        log.info("Ready to produce messages to {}", connectionFactory.getBrokerURL());
+    }
+
+    public String getBrokerURL() {
+        return connectionFactory.getBrokerURL();
+    }
+
+    public StreamMessage createStreamMessage() throws JMSException {
+        return session.createStreamMessage();
+    }
+
+    public BytesMessage createMessage(byte[] body) throws JMSException {
+        return this.createMessage(body, null);
+    }
+
+    public BytesMessage createMessage(byte[] body, Map<String, Object> properties) throws JMSException {
+        BytesMessage message = this.createBytesMessage();
+        if (body != null) {
+            message.writeBytes(body);
+        }
+
+        setMessageProperties(message, properties);
+
+        return message;
+    }
+
+    public BytesMessage createBytesMessage() throws JMSException {
+        return session.createBytesMessage();
+    }
+
+    public TextMessage createMessage(String body) throws JMSException {
+        return this.createMessage(body, null);
+    }
+
+    public TextMessage createMessage(String body, Map<String, Object> properties) throws JMSException {
+        TextMessage message = this.createTextMessage();
+        if (body != null) {
+            message.setText(body);
+        }
+
+        setMessageProperties(message, properties);
+
+        return message;
+    }
+
+    public TextMessage createTextMessage() throws JMSException {
+        return session.createTextMessage();
+    }
+
+    public MapMessage createMessage(Map<String, Object> body) throws JMSException {
+        return this.createMessage(body, null);
+    }
+
+    public MapMessage createMessage(Map<String, Object> body, Map<String, Object> properties) throws JMSException {
+        MapMessage message = this.createMapMessage();
+
+        if (body != null) {
+            for (Map.Entry<String, Object> entry : body.entrySet()) {
+                message.setObject(entry.getKey(), entry.getValue());
+            }
+        }
+
+        setMessageProperties(message, properties);
+
+        return message;
+    }
+
+    public MapMessage createMapMessage() throws JMSException {
+        return session.createMapMessage();
+    }
+
+    public ObjectMessage createMessage(Serializable body) throws JMSException {
+        return this.createMessage(body, null);
+    }
+
+    public ObjectMessage createMessage(Serializable body, Map<String, Object> properties) throws JMSException {
+        ObjectMessage message = this.createObjectMessage();
+
+        if (body != null) {
+            message.setObject(body);
+        }
+
+        setMessageProperties(message, properties);
+
+        return message;
+    }
+
+    public ObjectMessage createObjectMessage() throws JMSException {
+        return session.createObjectMessage();
+    }
 }

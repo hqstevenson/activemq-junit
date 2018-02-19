@@ -14,11 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.pronoia.junit.activemq;
 
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Map;
+
 import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
@@ -29,6 +31,9 @@ import javax.jms.TextMessage;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 
+/**
+ * Abstract base class for ActiveMQ Producer client resources.
+ */
 public abstract class AbstractActiveMQProducerResource extends AbstractActiveMQClientResource {
     MessageProducer producer;
 

@@ -14,15 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.pronoia.junit.activemq;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class MultipleEmbeddedActiveMQBrokerRuleTest {
     final String brokerOneName = "broker-one";
@@ -36,25 +37,25 @@ public class MultipleEmbeddedActiveMQBrokerRuleTest {
 
     public MultipleEmbeddedActiveMQBrokerRuleTest() {
         // Perform and broker configuation here before JUnit starts the brokers
-        brokerOne.setBrokerName( brokerOneName);
-        brokerTwo.setBrokerName( brokerTwoName);
+        brokerOne.setBrokerName(brokerOneName);
+        brokerTwo.setBrokerName(brokerTwoName);
     }
 
     @Before
     public void setUp() throws Exception {
-        assertTrue( "Broker One should be started", brokerOne.brokerService.isStarted());
-        assertTrue( "Broker Two should be started", brokerTwo.brokerService.isStarted());
+        assertTrue("Broker One should be started", brokerOne.brokerService.isStarted());
+        assertTrue("Broker Two should be started", brokerTwo.brokerService.isStarted());
     }
 
     @After
     public void tearDown() throws Exception {
-        assertTrue( "Broker One should still be running", brokerOne.brokerService.isStarted());
-        assertTrue( "Broker Two should still be running", brokerTwo.brokerService.isStarted());
+        assertTrue("Broker One should still be running", brokerOne.brokerService.isStarted());
+        assertTrue("Broker Two should still be running", brokerTwo.brokerService.isStarted());
     }
 
     @Test
     public void testStart() throws Exception {
-        assertEquals( "Broker One name is incorrect", brokerOneName, brokerOne.getBrokerName());
-        assertEquals( "Broker Two name is incorrect", brokerTwoName, brokerTwo.getBrokerName());
+        assertEquals("Broker One name is incorrect", brokerOneName, brokerOne.getBrokerName());
+        assertEquals("Broker Two name is incorrect", brokerTwoName, brokerTwo.getBrokerName());
     }
 }

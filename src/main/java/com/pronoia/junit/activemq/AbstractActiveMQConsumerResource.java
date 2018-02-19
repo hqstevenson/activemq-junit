@@ -14,9 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.pronoia.junit.activemq;
 
 import java.net.URI;
+
 import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
@@ -27,6 +29,9 @@ import javax.jms.TextMessage;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 
+/**
+ * Abstract base class for ActiveMQ Consumer client resources.
+ */
 public abstract class AbstractActiveMQConsumerResource extends AbstractActiveMQClientResource {
     MessageConsumer consumer;
     long defaultReceiveTimout = 50;
@@ -99,9 +104,11 @@ public abstract class AbstractActiveMQConsumerResource extends AbstractActiveMQC
     /**
      * Receive a message with the given timeout
      *
-     * @param timeout
-     * @return
-     * @throws JMSException
+     * @param timeout the amount of time to wait for a message in milliseconds
+     *
+     * @return the message receivied or null in the event of a timeout
+     *
+     * @throws JMSException in the event of a JMS error
      */
     public Message receiveMessage(long timeout) throws JMSException {
         Message message = null;

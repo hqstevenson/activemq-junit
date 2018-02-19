@@ -14,14 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.pronoia.junit.activemq;
 
 import java.net.URI;
+
 import javax.jms.JMSException;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.command.ActiveMQDestination;
 
+/**
+ * ActiveMQ Topic Publisher client Resource.
+ */
 public class ActiveMQTopicPublisherResource extends AbstractActiveMQProducerResource {
     public ActiveMQTopicPublisherResource(String destinationName, ActiveMQConnectionFactory connectionFactory) {
         super(destinationName, connectionFactory);
@@ -53,12 +58,17 @@ public class ActiveMQTopicPublisherResource extends AbstractActiveMQProducerReso
     }
 
     @Override
-    public byte getDestinationType() {
-        return ActiveMQDestination.TOPIC_TYPE;
+    public String getClientId() {
+        return null;
     }
 
     @Override
     protected void createClient() throws JMSException {
         producer = session.createProducer(destination);
+    }
+
+    @Override
+    public byte getDestinationType() {
+        return ActiveMQDestination.TOPIC_TYPE;
     }
 }
